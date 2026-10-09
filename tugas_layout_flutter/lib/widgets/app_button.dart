@@ -1,25 +1,35 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+// Reusable Component: tombol yang membuka URL melalui aplikasi eksternal.
 class AppButton extends StatelessWidget {
   final String label;
-  final IconData? icon;
-  final VoidCallback? onPressed;
-  final String? url;
+  final IconData icon;
+  final String url;
+  final double height;
+  final double borderRadius;
 
   const AppButton({
     super.key,
     required this.label,
-    this.icon,
-    this.onPressed,
-    this.url,
+    required this.icon,
+    required this.url,
+    required this.height,
+    required this.borderRadius,
   });
 
-  Future<void> _handlePressed() async {
-    onPressed?.call();
-    if (url != null) {
-      final uri = Uri.parse(url!);
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+  // Intent: buka URL di aplikasi eksternal (browser / aplikasi GitHub).
+  // Khusus web: buka di tab yang sama ('_self'), bukan tab baru.
+  Future<void> _openUrl() async {
+    final uri = Uri.parse(url);
+    final opened = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+      webOnlyWindowName: kIsWeb ? '_self' : null,
+    );
+    if (!opened) {
+      debugPrint('Tidak dapat membuka $url');
     }
   }
 
@@ -27,21 +37,15 @@ class AppButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton(
-        onPressed: (onPressed != null || url != null) ? _handlePressed : null,
+      height: height,
+      child: ElevatedButton.icon(
+        onPressed: _openUrl,
+        icon: Icon(icon),
+        label: Text(label),
         style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(borderRadius),
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[Icon(icon), const SizedBox(width: 8)],
-            Text(label),
-          ],
         ),
       ),
     );
